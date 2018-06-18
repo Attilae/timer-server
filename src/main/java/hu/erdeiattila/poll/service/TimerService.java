@@ -6,8 +6,10 @@ import hu.erdeiattila.poll.model.*;
 import hu.erdeiattila.poll.payload.PagedResponse;
 import hu.erdeiattila.poll.payload.PollRequest;
 import hu.erdeiattila.poll.payload.PollResponse;
+import hu.erdeiattila.poll.payload.TimerRequest;
+import hu.erdeiattila.poll.payload.TimerResponse;
 import hu.erdeiattila.poll.payload.VoteRequest;
-import hu.erdeiattila.poll.repository.PollRepository;
+import hu.erdeiattila.poll.repository.TimerRepository;
 import hu.erdeiattila.poll.repository.UserRepository;
 import hu.erdeiattila.poll.repository.VoteRepository;
 import hu.erdeiattila.poll.security.UserPrincipal;
@@ -44,36 +46,33 @@ public class TimerService {
 
     private static final Logger logger = LoggerFactory.getLogger(TimerService.class);
 
-    public PagedResponse<PollResponse> getAllPolls(UserPrincipal currentUser, int page, int size) {
+    public PagedResponse<TimerResponse> getAllTimers(UserPrincipal currentUser, int page, int size) {
         validatePageNumberAndSize(page, size);
 
         // Retrieve Polls
         Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "createdAt");
-        Page<Timer> polls = timerRepository.findAll(pageable);
+        Page<Timer> timers = timerRepository.findAll(pageable);
 
-        if(polls.getNumberOfElements() == 0) {
-            return new PagedResponse<>(Collections.emptyList(), polls.getNumber(),
-                    polls.getSize(), polls.getTotalElements(), polls.getTotalPages(), polls.isLast());
+        if(timers.getNumberOfElements() == 0) {
+            return new PagedResponse<>(Collections.emptyList(), timers.getNumber(),
+            		timers.getSize(), timers.getTotalElements(), timers.getTotalPages(), timers.isLast());
         }
 
         // Map Polls to PollResponses containing vote counts and poll creator details
-        List<Long> pollIds = polls.map(Poll::getId).getContent();
+        List<Long> pollIds = timers.map(Timer::getId).getContent();
         Map<Long, Long> choiceVoteCountMap = getChoiceVoteCountMap(pollIds);
         Map<Long, Long> pollUserVoteMap = getPollUserVoteMap(currentUser, pollIds);
-        Map<Long, User> creatorMap = getPollCreatorMap(polls.getContent());
+        Map<Long, User> creatorMap = getTimerCreatorMap(timers.getContent());
 
-        List<PollResponse> pollResponses = polls.map(poll -> {
-            return ModelMapper.mapPollToPollResponse(poll,
-                    choiceVoteCountMap,
-                    creatorMap.get(poll.getCreatedBy()),
-                    pollUserVoteMap == null ? null : pollUserVoteMap.getOrDefault(poll.getId(), null));
+        List<TimerResponse> timerResponses = timers.map(timer -> {
+            return ModelMapper.mapTimerToTimerResponse(timer, creatorMap.get(timer.getCreatedBy()));
         }).getContent();
 
-        return new PagedResponse<>(pollResponses, polls.getNumber(),
-                polls.getSize(), polls.getTotalElements(), polls.getTotalPages(), polls.isLast());
+        return new PagedResponse<>(timerResponses, timers.getNumber(),
+        		timers.getSize(), timers.getTotalElements(), timers.getTotalPages(), timers.isLast());
     }
 
-    public PagedResponse<PollResponse> getPollsCreatedBy(String username, UserPrincipal currentUser, int page, int size) {
+    public PagedResponse<TimerResponse> getTimersCreatedBy(String username, UserPrincipal currentUser, int page, int size) {
         validatePageNumberAndSize(page, size);
 
         User user = userRepository.findByUsername(username)
@@ -81,109 +80,47 @@ public class TimerService {
 
         // Retrieve all polls created by the given username
         Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "createdAt");
-        Page<Poll> polls = pollRepository.findByCreatedBy(user.getId(), pageable);
+        Page<Timer> timers = timerRepository.findByCreatedBy(user.getId(), pageable);
 
-        if (polls.getNumberOfElements() == 0) {
-            return new PagedResponse<>(Collections.emptyList(), polls.getNumber(),
-                    polls.getSize(), polls.getTotalElements(), polls.getTotalPages(), polls.isLast());
+        if (timers.getNumberOfElements() == 0) {
+            return new PagedResponse<>(Collections.emptyList(), timers.getNumber(),
+            		timers.getSize(), timers.getTotalElements(), timers.getTotalPages(), timers.isLast());
         }
 
         // Map Polls to PollResponses containing vote counts and poll creator details
-        List<Long> pollIds = polls.map(Poll::getId).getContent();
-        Map<Long, Long> choiceVoteCountMap = getChoiceVoteCountMap(pollIds);
-        Map<Long, Long> pollUserVoteMap = getPollUserVoteMap(currentUser, pollIds);
+        List<Long> timerIds = timers.map(Timer::getId).getContent();
+        Map<Long, Long> choiceVoteCountMap = getChoiceVoteCountMap(timerIds);
+        Map<Long, Long> timerUserVoteMap = getPollUserVoteMap(currentUser, timerIds);
 
-        List<PollResponse> pollResponses = polls.map(poll -> {
-            return ModelMapper.mapPollToPollResponse(poll,
-                    choiceVoteCountMap,
-                    user,
-                    pollUserVoteMap == null ? null : pollUserVoteMap.getOrDefault(poll.getId(), null));
+        List<TimerResponse> timerResponses = timers.map(timer -> {
+            return ModelMapper.mapTimerToTimerResponse(timer, user);
         }).getContent();
 
-        return new PagedResponse<>(pollResponses, polls.getNumber(),
-                polls.getSize(), polls.getTotalElements(), polls.getTotalPages(), polls.isLast());
+        return new PagedResponse<>(timerResponses, timers.getNumber(),
+        		timers.getSize(), timers.getTotalElements(), timers.getTotalPages(), timers.isLast());
     }
 
-    public PagedResponse<PollResponse> getPollsVotedBy(String username, UserPrincipal currentUser, int page, int size) {
-        validatePageNumberAndSize(page, size);
+    public Timer createTimer(TimerRequest timerRequest) {
+        Timer timer = new Timer();
+        timer.setTitle(timerRequest.getTitle());
+        timer.setStartDateTime(timerRequest.getStartDateTime());
+        timer.setEndDateTime(timerRequest.getEndDateTime());
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
-
-        // Retrieve all pollIds in which the given username has voted
-        Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "createdAt");
-        Page<Long> userVotedPollIds = voteRepository.findVotedPollIdsByUserId(user.getId(), pageable);
-
-        if (userVotedPollIds.getNumberOfElements() == 0) {
-            return new PagedResponse<>(Collections.emptyList(), userVotedPollIds.getNumber(),
-                    userVotedPollIds.getSize(), userVotedPollIds.getTotalElements(),
-                    userVotedPollIds.getTotalPages(), userVotedPollIds.isLast());
-        }
-
-        // Retrieve all poll details from the voted pollIds.
-        List<Long> pollIds = userVotedPollIds.getContent();
-
-        Sort sort = new Sort(Sort.Direction.DESC, "createdAt");
-        List<Poll> polls = pollRepository.findByIdIn(pollIds, sort);
-
-        // Map Polls to PollResponses containing vote counts and poll creator details
-        Map<Long, Long> choiceVoteCountMap = getChoiceVoteCountMap(pollIds);
-        Map<Long, Long> pollUserVoteMap = getPollUserVoteMap(currentUser, pollIds);
-        Map<Long, User> creatorMap = getPollCreatorMap(polls);
-
-        List<PollResponse> pollResponses = polls.stream().map(poll -> {
-            return ModelMapper.mapPollToPollResponse(poll,
-                    choiceVoteCountMap,
-                    creatorMap.get(poll.getCreatedBy()),
-                    pollUserVoteMap == null ? null : pollUserVoteMap.getOrDefault(poll.getId(), null));
-        }).collect(Collectors.toList());
-
-        return new PagedResponse<>(pollResponses, userVotedPollIds.getNumber(), userVotedPollIds.getSize(), userVotedPollIds.getTotalElements(), userVotedPollIds.getTotalPages(), userVotedPollIds.isLast());
+        return timerRepository.save(timer);
     }
 
-
-    public Poll createPoll(PollRequest pollRequest) {
-        Poll poll = new Poll();
-        poll.setQuestion(pollRequest.getQuestion());
-
-        pollRequest.getChoices().forEach(choiceRequest -> {
-            poll.addChoice(new Choice(choiceRequest.getText()));
-        });
-
-        Instant now = Instant.now();
-        Instant expirationDateTime = now.plus(Duration.ofDays(pollRequest.getPollLength().getDays()))
-                .plus(Duration.ofHours(pollRequest.getPollLength().getHours()));
-
-        poll.setExpirationDateTime(expirationDateTime);
-
-        return pollRepository.save(poll);
-    }
-
-    public PollResponse getPollById(Long pollId, UserPrincipal currentUser) {
-        Poll poll = pollRepository.findById(pollId).orElseThrow(
-                () -> new ResourceNotFoundException("Poll", "id", pollId));
-
-        // Retrieve Vote Counts of every choice belonging to the current poll
-        List<ChoiceVoteCount> votes = voteRepository.countByPollIdGroupByChoiceId(pollId);
-
-        Map<Long, Long> choiceVotesMap = votes.stream()
-                .collect(Collectors.toMap(ChoiceVoteCount::getChoiceId, ChoiceVoteCount::getVoteCount));
+    public TimerResponse getTimerById(Long timerId, UserPrincipal currentUser) {
+        Timer timer = timerRepository.findById(timerId).orElseThrow(
+                () -> new ResourceNotFoundException("Timer", "id", timerId));
 
         // Retrieve poll creator details
-        User creator = userRepository.findById(poll.getCreatedBy())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", poll.getCreatedBy()));
+        User creator = userRepository.findById(timer.getCreatedBy())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", timer.getCreatedBy()));
 
-        // Retrieve vote done by logged in user
-        Vote userVote = null;
-        if(currentUser != null) {
-            userVote = voteRepository.findByUserIdAndPollId(currentUser.getId(), pollId);
-        }
-
-        return ModelMapper.mapPollToPollResponse(poll, choiceVotesMap,
-                creator, userVote != null ? userVote.getChoice().getId(): null);
+        return ModelMapper.mapTimerToTimerResponse(timer, creator);
     }
 
-    public PollResponse castVoteAndGetUpdatedPoll(Long pollId, VoteRequest voteRequest, UserPrincipal currentUser) {
+    /*public PollResponse castVoteAndGetUpdatedPoll(Long pollId, VoteRequest voteRequest, UserPrincipal currentUser) {
         Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new ResourceNotFoundException("Poll", "id", pollId));
 
@@ -223,7 +160,7 @@ public class TimerService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", poll.getCreatedBy()));
 
         return ModelMapper.mapPollToPollResponse(poll, choiceVotesMap, creator, vote.getChoice().getId());
-    }
+    }*/
 
 
     private void validatePageNumberAndSize(int page, int size) {
@@ -258,10 +195,10 @@ public class TimerService {
         return pollUserVoteMap;
     }
 
-    Map<Long, User> getPollCreatorMap(List<Poll> polls) {
+    Map<Long, User> getTimerCreatorMap(List<Timer> timers) {
         // Get Poll Creator details of the given list of polls
-        List<Long> creatorIds = polls.stream()
-                .map(Poll::getCreatedBy)
+        List<Long> creatorIds = timers.stream()
+                .map(Timer::getCreatedBy)
                 .distinct()
                 .collect(Collectors.toList());
 

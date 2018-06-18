@@ -8,6 +8,7 @@ import hu.erdeiattila.poll.repository.VoteRepository;
 import hu.erdeiattila.poll.security.CurrentUser;
 import hu.erdeiattila.poll.security.UserPrincipal;
 import hu.erdeiattila.poll.service.PollService;
+import hu.erdeiattila.poll.service.TimerService;
 import hu.erdeiattila.poll.util.AppConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ public class TimerController {
 	private static final Logger logger = LoggerFactory.getLogger(TimerController.class);
 
 	@GetMapping
-	public PagedResponse<PollResponse> getTimers(@CurrentUser UserPrincipal currentUser,
+	public PagedResponse<TimerResponse> getTimers(@CurrentUser UserPrincipal currentUser,
 			@RequestParam(value = "page", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int page,
 			@RequestParam(value = "size", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int size) {
 		return timerService.getAllTimers(currentUser, page, size);
@@ -43,24 +44,24 @@ public class TimerController {
 
 	@PostMapping
 	@PreAuthorize("hasRole('USER')")
-	public ResponseEntity<?> createPoll(@Valid @RequestBody PollRequest pollRequest) {
-		Poll poll = pollService.createPoll(pollRequest);
+	public ResponseEntity<?> createTimer(@Valid @RequestBody TimerRequest timerRequest) {
+		Timer timer = timerService.createTimer(timerRequest);
 
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{pollId}").buildAndExpand(poll.getId())
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{timerId}").buildAndExpand(timer.getId())
 				.toUri();
 
-		return ResponseEntity.created(location).body(new ApiResponse(true, "Poll Created Successfully"));
+		return ResponseEntity.created(location).body(new ApiResponse(true, "Timer Created Successfully"));
 	}
 
-	@GetMapping("/{pollId}")
-	public PollResponse getPollById(@CurrentUser UserPrincipal currentUser, @PathVariable Long pollId) {
-		return pollService.getPollById(pollId, currentUser);
+	@GetMapping("/{timerId}")
+	public TimerResponse getTimerById(@CurrentUser UserPrincipal currentUser, @PathVariable Long timerId) {
+		return timerService.getTimerById(timerId, currentUser);
 	}
 
-	@PostMapping("/{pollId}/votes")
+	/*@PostMapping("/{pollId}/votes")
 	@PreAuthorize("hasRole('USER')")
 	public PollResponse castVote(@CurrentUser UserPrincipal currentUser, @PathVariable Long pollId,
 			@Valid @RequestBody VoteRequest voteRequest) {
 		return pollService.castVoteAndGetUpdatedPoll(pollId, voteRequest, currentUser);
-	}
+	}*/
 }

@@ -21,7 +21,7 @@ public class Timer extends UserDateAudit {
 
     @NotBlank
     @Size(max = 140)
-    private String question;
+    private String title;
 
     @OneToMany(
             mappedBy = "timer",
@@ -29,13 +29,16 @@ public class Timer extends UserDateAudit {
             fetch = FetchType.EAGER,
             orphanRemoval = true
     )
-    @Size(min = 2, max = 6)
+    @Size(max = 6)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 30)
     private List<Tag> tags = new ArrayList<>();
 
     @NotNull
-    private Instant expirationDateTime;
+    private Instant startDateTime;
+    
+    @NotNull
+    private Instant endDateTime;
 
     public Long getId() {
         return id;
@@ -45,37 +48,36 @@ public class Timer extends UserDateAudit {
         this.id = id;
     }
 
-    public String getQuestion() {
-        return question;
+    public String getTitle() {
+        return title;
     }
 
-    public void setQuestion(String question) {
-        this.question = question;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public List<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(List<Tags> tags) {
+    public void setTags(List<Tag> tags) {
         this.tags = tags;
     }
-
-    public Instant getExpirationDateTime() {
-        return expirationDateTime;
+    
+    public Instant getStartDateTime() {
+        return startDateTime;
     }
 
-    public void setExpirationDateTime(Instant expirationDateTime) {
-        this.expirationDateTime = expirationDateTime;
+    public void setStartDateTime(Instant startDateTime) {
+        this.startDateTime = startDateTime;
+    }
+    
+    public Instant getEndDateTime() {
+        return endDateTime;
     }
 
-    public void addChoice(Choice choice) {
-        choices.add(choice);
-        choice.setPoll(this);
+    public void setEndDateTime(Instant endDateTime) {
+        this.endDateTime = endDateTime;
     }
 
-    public void removeChoice(Choice choice) {
-        choices.remove(choice);
-        choice.setPoll(null);
-    }
 }

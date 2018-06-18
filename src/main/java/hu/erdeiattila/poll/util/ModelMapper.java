@@ -1,9 +1,12 @@
 package hu.erdeiattila.poll.util;
 
 import hu.erdeiattila.poll.model.Poll;
+import hu.erdeiattila.poll.model.Timer;
 import hu.erdeiattila.poll.model.User;
 import hu.erdeiattila.poll.payload.ChoiceResponse;
 import hu.erdeiattila.poll.payload.PollResponse;
+import hu.erdeiattila.poll.payload.TagResponse;
+import hu.erdeiattila.poll.payload.TimerResponse;
 import hu.erdeiattila.poll.payload.UserSummary;
 
 import java.time.Instant;
@@ -12,8 +15,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ModelMapper {
-
-    public static PollResponse mapPollToPollResponse(Poll poll, Map<Long, Long> choiceVotesMap, User creator, Long userVote) {
+	
+	public static PollResponse mapPollToPollResponse(Poll poll, Map<Long, Long> choiceVotesMap, User creator, Long userVote) {
         PollResponse pollResponse = new PollResponse();
         pollResponse.setId(poll.getId());
         pollResponse.setQuestion(poll.getQuestion());
@@ -47,5 +50,27 @@ public class ModelMapper {
         pollResponse.setTotalVotes(totalVotes);
 
         return pollResponse;
+    }
+
+    public static TimerResponse mapTimerToTimerResponse(Timer timer, User creator) {
+    	TimerResponse timerResponse = new TimerResponse();
+    	timerResponse.setId(timer.getId());
+    	timerResponse.setTitle(timer.getTitle());
+    	timerResponse.setCreationDateTime(timer.getCreatedAt());
+    	timerResponse.setStartDateTime(timer.getStartDateTime());
+    	timerResponse.setEndDateTime(timer.getEndDateTime());
+
+        List<TagResponse> tagResponses = timer.getTags().stream().map(tag -> {
+            TagResponse tagResponse = new TagResponse();
+            tagResponse.setId(tag.getId());
+            tagResponse.setText(tag.getText());
+            return tagResponse;
+        }).collect(Collectors.toList());
+
+        timerResponse.setTags(tagResponses);
+        UserSummary creatorSummary = new UserSummary(creator.getId(), creator.getUsername(), creator.getName());
+        timerResponse.setCreatedBy(creatorSummary);
+
+        return timerResponse;
     }
 }

@@ -18,7 +18,7 @@ public class Tag {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "timer_id", nullable = false)
-    private Poll poll;
+    private Timer timer;
 
     public Tag() {
 
@@ -44,12 +44,12 @@ public class Tag {
         this.text = text;
     }
 
-    public Poll getPoll() {
-        return poll;
+    public Timer getTimer() {
+        return timer;
     }
 
-    public void setPoll(Poll poll) {
-        this.poll = poll;
+    public void setTimer(Timer timer) {
+        this.timer = timer;
     }
 
     @Override
