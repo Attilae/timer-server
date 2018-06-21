@@ -1,8 +1,10 @@
 package hu.erdeiattila.poll.util;
 
+import hu.erdeiattila.poll.model.Activity;
 import hu.erdeiattila.poll.model.Poll;
 import hu.erdeiattila.poll.model.Timer;
 import hu.erdeiattila.poll.model.User;
+import hu.erdeiattila.poll.payload.ActivityResponse;
 import hu.erdeiattila.poll.payload.ChoiceResponse;
 import hu.erdeiattila.poll.payload.PollResponse;
 import hu.erdeiattila.poll.payload.TagResponse;
@@ -72,5 +74,25 @@ public class ModelMapper {
         timerResponse.setCreatedBy(creatorSummary);
 
         return timerResponse;
+    }
+    
+    public static ActivityResponse mapActivityToActivityResponse(Activity activity, User creator) {
+    	ActivityResponse activityResponse = new ActivityResponse();
+    	activityResponse.setId(activity.getId());
+    	activityResponse.setTitle(activity.getTitle());
+    	activityResponse.setCreationDateTime(activity.getCreatedAt());
+
+        List<TimerResponse> timerResponses = activity.getTimers().stream().map(timer -> {
+            TimerResponse timerResponse = new TimerResponse();
+            timerResponse.setId(timer.getId());
+            timerResponse.setTitle(timer.getTitle());
+            return timerResponse;
+        }).collect(Collectors.toList());
+
+        activityResponse.setTimers(timerResponses);
+        UserSummary creatorSummary = new UserSummary(creator.getId(), creator.getUsername(), creator.getName());
+        activityResponse.setCreatedBy(creatorSummary);
+
+        return activityResponse;
     }
 }

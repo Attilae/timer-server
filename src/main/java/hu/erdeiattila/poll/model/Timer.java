@@ -33,6 +33,10 @@ public class Timer extends UserDateAudit {
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 30)
     private List<Tag> tags = new ArrayList<>();
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_id", nullable = false)
+    private Activity activity;
 
     @NotNull
     private Instant startDateTime;
@@ -62,6 +66,14 @@ public class Timer extends UserDateAudit {
 
     public void setTags(List<Tag> tags) {
         this.tags = tags;
+    }
+    
+    public Activity getActivity() {
+        return activity;
+    }
+
+    public void setActivity(Activity activity) {
+        this.activity = activity;
     }
     
     public Instant getStartDateTime() {
