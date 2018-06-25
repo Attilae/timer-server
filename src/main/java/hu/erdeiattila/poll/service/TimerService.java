@@ -9,6 +9,7 @@ import hu.erdeiattila.poll.payload.PollResponse;
 import hu.erdeiattila.poll.payload.TimerRequest;
 import hu.erdeiattila.poll.payload.TimerResponse;
 import hu.erdeiattila.poll.payload.VoteRequest;
+import hu.erdeiattila.poll.repository.ActivityRepository;
 import hu.erdeiattila.poll.repository.TimerRepository;
 import hu.erdeiattila.poll.repository.UserRepository;
 import hu.erdeiattila.poll.repository.VoteRepository;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,9 @@ public class TimerService {
 
     @Autowired
     private VoteRepository voteRepository;
+    
+    @Autowired
+    private ActivityRepository activityRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -103,6 +108,11 @@ public class TimerService {
     public Timer createTimer(TimerRequest timerRequest) {
         Timer timer = new Timer();
         timer.setTitle(timerRequest.getTitle());
+        
+        Activity activity = activityRepository.findById(timerRequest.getActivityId()).orElseThrow(
+                () -> new ResourceNotFoundException("Activity", "id", timerRequest.getActivityId()));;
+        
+        timer.setActivity(activity);
         timer.setStartDateTime(timerRequest.getStartDateTime());
         timer.setEndDateTime(timerRequest.getEndDateTime());
 

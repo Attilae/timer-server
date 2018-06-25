@@ -22,6 +22,9 @@ public class TimerRequest {
 
 	@NotNull
 	private Instant endDateTime;
+	
+	@NotNull
+	private Long activityId;
 
 	/*@NotNull
 	@Valid
@@ -57,6 +60,14 @@ public class TimerRequest {
 
 	public void setEndDateTime(Instant endDateTime) {
 		this.endDateTime = endDateTime;
+	}
+	
+	public Long getActivityId() {
+		return activityId;
+	}
+
+	public void setActivityId(Long activityId) {
+		this.activityId = activityId;
 	}
 
 	/*public PollLength getPollLength() {
