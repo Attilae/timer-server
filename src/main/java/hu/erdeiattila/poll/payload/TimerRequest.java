@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.util.List;
 
 public class TimerRequest {
-	@NotBlank
-	@Size(max = 140)
-	private String title;
 
 	@NotNull
 	@Valid
@@ -25,18 +22,6 @@ public class TimerRequest {
 	
 	@NotNull
 	private Long activityId;
-
-	/*@NotNull
-	@Valid
-	private PollLength pollLength;*/
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
 
 	public List<TagRequest> getTags() {
 		return tags;

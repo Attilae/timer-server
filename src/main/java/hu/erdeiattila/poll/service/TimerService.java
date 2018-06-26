@@ -107,7 +107,6 @@ public class TimerService {
 
     public Timer createTimer(TimerRequest timerRequest) {
         Timer timer = new Timer();
-        timer.setTitle(timerRequest.getTitle());
         
         Activity activity = activityRepository.findById(timerRequest.getActivityId()).orElseThrow(
                 () -> new ResourceNotFoundException("Activity", "id", timerRequest.getActivityId()));;

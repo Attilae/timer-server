@@ -57,7 +57,6 @@ public class ModelMapper {
     public static TimerResponse mapTimerToTimerResponse(Timer timer, User creator) {
     	TimerResponse timerResponse = new TimerResponse();
     	timerResponse.setId(timer.getId());
-    	timerResponse.setTitle(timer.getTitle());
     	timerResponse.setCreationDateTime(timer.getCreatedAt());
     	timerResponse.setStartDateTime(timer.getStartDateTime());
     	timerResponse.setEndDateTime(timer.getEndDateTime());
@@ -85,7 +84,6 @@ public class ModelMapper {
         List<TimerResponse> timerResponses = activity.getTimers().stream().map(timer -> {
             TimerResponse timerResponse = new TimerResponse();
             timerResponse.setId(timer.getId());
-            timerResponse.setTitle(timer.getTitle());
             return timerResponse;
         }).collect(Collectors.toList());
 
